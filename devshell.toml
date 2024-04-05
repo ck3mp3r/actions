@@ -1,0 +1,20 @@
+# https://numtide.github.io/devshell
+name = "actions devshell"
+
+packages = [
+  "nixd"
+]
+
+[[commands]]
+package = "act"
+category = "github"
+
+[[commands]]
+name = "format"
+help = "Format the entire codebase"
+command = "nix fmt"
+
+[[commands]]
+name = "checks"
+help = "Run checks"
+command = "nix flake check"
