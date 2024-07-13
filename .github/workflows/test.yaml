@@ -9,7 +9,7 @@ on:
       - "*"
 
 jobs:
-  main:
+  test:
     runs-on: ubuntu-latest
     permissions: write-all
     steps:
@@ -25,7 +25,7 @@ jobs:
 
       - name: Calculate version
         id: semver
-        uses: ./semver-version-action
+        uses: ./semver-version
         with:
           current-version: ${{ steps.lv.outputs.latest-version }}   
 

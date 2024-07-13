@@ -13,6 +13,7 @@ runs:
   using: 'composite'
   steps:
     - id: calc-semver
+      shell: bash
       run: |
         current_version="${{ inputs.current-version }}"
 
@@ -44,4 +45,3 @@ runs:
             SEMVER_VERSION=$new_version
         fi
         echo "semver=$SEMVER_VERSION" >> $GITHUB_OUTPUT
-      shell: bash
