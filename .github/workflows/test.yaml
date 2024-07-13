@@ -4,7 +4,7 @@ name: test semver
 on:
   push:
     paths:
-      - action.yaml
+      - semver-version/action.yaml
     branches:
       - "*"
 
