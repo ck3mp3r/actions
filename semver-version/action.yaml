@@ -1,5 +1,5 @@
 ---
-name: 'SemVer Version Action'
+name: 'SemVer Version Actions'
 description: 'Calculates the next semantic version'
 inputs:
   current-version:
