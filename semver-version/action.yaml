@@ -1,0 +1,47 @@
+---
+name: 'SemVer Version Action'
+description: 'Calculates the next semantic version'
+inputs:
+  current-version:
+    description: 'Current version'
+    required: true
+outputs:
+  semver:
+    value: ${{ steps.calc-semver.outputs.semver }}
+    description: 'Generated SemVer version'
+runs:
+  using: 'composite'
+  steps:
+    - id: calc-semver
+      run: |
+        current_version="${{ inputs.current-version }}"
+
+        # Strip the 'v' prefix from the version to get the semantic version
+        current_version=${current_version#v}
+
+        # Fetch latest tag prefixed with 'v'
+        latest_tag=$(git tag | grep '^v[0-9]\+\.[0-9]\+\.[0-9]\+$' | sort -V | tail -n 1)
+
+        # Strip the 'v' prefix from the tag to get the semantic version
+        latest_semver=${latest_tag#v}
+
+        # Extract major, minor, and patch versions
+        major_version_current=$(echo $current_version | cut -d'.' -f1)
+        minor_version_current=$(echo $current_version | cut -d'.' -f2)
+        patch_version_current=$(echo $current_version | cut -d'.' -f3)
+
+        major_version_latest=$(echo $latest_semver | cut -d'.' -f1)
+        minor_version_latest=$(echo $latest_semver | cut -d'.' -f2)
+        patch_version_latest=$(echo $latest_semver | cut -d'.' -f3)
+
+        # If major or minor versions have changed, tag with the version from the input
+        if [[ "$major_version_current" != "$major_version_latest" || "$minor_version_current" != "$minor_version_latest" ]]; then
+            SEMVER_VERSION=$current_version
+        # If major and minor versions have not changed, bump the patch version and tag
+        elif [[ "$major_version_current" == "$major_version_latest" && "$minor_version_current" == "$minor_version_latest" ]]; then
+            new_patch_version=$((patch_version_latest+1))
+            new_version="$major_version_current.$minor_version_current.$new_patch_version"
+            SEMVER_VERSION=$new_version
+        fi
+        echo "semver=$SEMVER_VERSION" >> $GITHUB_OUTPUT
+      shell: bash
