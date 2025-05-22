@@ -70,33 +70,22 @@ runs:
       run: |
         echo "Checking all workflows for commit: ${{ steps.update_branch.outputs.commit_sha }}"
         sleep 15
-        statuses=$(gh run list --commit ${{ steps.update_branch.outputs.commit_sha }} --json name,status,conclusion -q '.[] | [.name, .status, .conclusion] | @csv')
-        echo "Workflow statuses: $statuses"
-        if [ -z "$statuses" ]; then
-          echo "No workflows configured to run on branch push. Proceeding with merge."
-        else
-          while true; do
-            echo "Current statuses: $statuses"
-            if [ -z "$statuses" ]; then
-              echo "No workflow statuses found. Exiting."
-              exit 1
-            elif echo "$statuses" | grep -q '"completed","failure"'; then
-              echo "One or more workflows failed."
-              exit 1
-            elif ! echo "$statuses" | grep -q '"in_progress"'; then
-              if echo "$statuses" | grep -q '"completed","success"'; then
-                echo "All workflows completed successfully."
-                break
-              else
-                echo "No successful workflow runs found for branch ${{ inputs.update-branch }}"
-                exit 1
-              fi
-            fi
-            echo "Waiting for workflows to complete..."
-            sleep 30
-            statuses=$(gh run list --branch ${{ inputs.update-branch }} --json name,status,conclusion -q '.[] | [.name, .status, .conclusion] | @csv' | grep -E "$(IFS=\|; echo "${workflow_names[*]}")")
-          done
-        fi
+        while true; do
+          statuses=$(gh run list --commit ${{ steps.update_branch.outputs.commit_sha }} --json name,status,conclusion -q '.[] | [.name, .status, .conclusion] | @csv')
+          echo "Current statuses: $statuses"
+          if [ -z "$statuses" ]; then
+            echo "No workflows configured to run on branch push. Proceeding with merge."
+            break
+          elif echo "$statuses" | grep -q '"completed","failure"'; then
+            echo "One or more workflows failed."
+            exit 1
+          elif ! echo "$statuses" | grep -q '"in_progress"'; then
+            echo "All workflows completed successfully."
+            break
+          fi
+          echo "Waiting for workflows to complete..."
+          sleep 30
+        done
       env:
         GH_TOKEN: ${{ inputs.github-token || github.token }}
 
