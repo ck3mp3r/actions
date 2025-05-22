@@ -1,0 +1,120 @@
+---
+name: "Update Flake Lock Files"
+description: "An action to update flake.lock files in a repository."
+
+inputs:
+  update-branch:
+    description: "Branch name for updates"
+    required: false
+    default: "update-flake-lock"
+  main-branch:
+    description: "Branch to base off of."
+    required: false
+    default: "main"
+  github-token:
+    description: "GitHub token for authentication"
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.main-branch }}
+        token: ${{ inputs.github-token || github.token }}
+
+    - name: Install Nix
+      uses: DeterminateSystems/nix-installer-action@v17
+
+    - name: Create or update branch
+      shell: bash
+      run: |
+        git config --global user.name "${{ github.actor }}"
+        git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+        if git ls-remote --exit-code --heads origin ${{ inputs.update-branch }}; then
+          echo "Branch ${{ inputs.update-branch }} exists. Fetching and rebasing."
+          git fetch origin ${{ inputs.update-branch }}:${{ inputs.update-branch }}
+          git checkout ${{ inputs.update-branch }}
+          git rebase origin/${{ inputs.main-branch }}
+        else
+          echo "Branch ${{ inputs.update-branch }} does not exist. Creating new branch."
+          git checkout -b ${{ inputs.update-branch }}
+        fi
+
+    - name: Find and update flake.lock files
+      shell: bash
+      run: |
+        find . -name 'flake.lock' | while read lockfile; do
+          (cd $(dirname $lockfile) && nix flake update)
+          git add $lockfile
+          git commit -m "Update flake.lock in $(dirname $lockfile)"
+        done
+
+    - name: Rebase onto main
+      shell: bash
+      run: |
+        git fetch origin
+        git rebase origin/main
+
+    - name: Force push update branch
+      id: update_branch
+      shell: bash
+      run: |
+        git push origin ${{ inputs.update-branch }} --force
+        echo "commit_sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+
+    - name: Check Workflow Status
+      shell: bash
+      run: |
+        echo "Checking all workflows for commit: ${{ steps.update_branch.outputs.commit_sha }}"
+        sleep 15
+        statuses=$(gh run list --commit ${{ steps.update_branch.outputs.commit_sha }} --json name,status,conclusion -q '.[] | [.name, .status, .conclusion] | @csv')
+        echo "Workflow statuses: $statuses"
+        if [ -z "$statuses" ]; then
+          echo "No workflows configured to run on branch push. Proceeding with merge."
+        else
+          while true; do
+            echo "Current statuses: $statuses"
+            if [ -z "$statuses" ]; then
+              echo "No workflow statuses found. Exiting."
+              exit 1
+            elif echo "$statuses" | grep -q '"completed","failure"'; then
+              echo "One or more workflows failed."
+              exit 1
+            elif ! echo "$statuses" | grep -q '"in_progress"'; then
+              if echo "$statuses" | grep -q '"completed","success"'; then
+                echo "All workflows completed successfully."
+                break
+              else
+                echo "No successful workflow runs found for branch ${{ inputs.update-branch }}"
+                exit 1
+              fi
+            fi
+            echo "Waiting for workflows to complete..."
+            sleep 30
+            statuses=$(gh run list --branch ${{ inputs.update-branch }} --json name,status,conclusion -q '.[] | [.name, .status, .conclusion] | @csv' | grep -E "$(IFS=\|; echo "${workflow_names[*]}")")
+          done
+        fi
+      env:
+        GH_TOKEN: ${{ inputs.github-token || github.token }}
+
+    - name: Squash and merge
+      shell: bash
+      run: |
+        git checkout ${{ inputs.main-branch }}
+        git merge --squash ${{ inputs.update-branch }}
+        git commit -m "Squash merge flake.lock updates"
+
+    - name: Push changes
+      shell: bash
+      run: |
+        git push origin main
+
+    - name: Delete update branch
+      shell: bash
+      run: |
+        gh api -X DELETE repos/${{ github.repository }}/git/refs/heads/${{ inputs.update-branch }}
+      env:
+        GH_TOKEN: ${{ inputs.github-token || github.token }}
