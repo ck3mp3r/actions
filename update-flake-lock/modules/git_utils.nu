@@ -16,7 +16,7 @@ export def 'branch rebase' [] {
 
   git fetch origin $target_branch
 
-  let changes = (git log HEAD..origin/$target_branch --oneline | str trim)
+  let changes = (git log HEAD..origin/($target_branch) --oneline | str trim)
 
   if ($changes != "") {
     git rebase origin/$target_branch
