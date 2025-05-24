@@ -30,7 +30,7 @@ runs:
 
     - name: Install Nushell
       shell: bash
-      run: nix profile add nixpkgs#nushell
+      run: nix profile install nixpkgs#nushell
 
     - name: test
       shell: nu {0}
