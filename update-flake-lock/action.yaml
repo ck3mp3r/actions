@@ -54,6 +54,7 @@ runs:
           }
 
           let branch_checks = ($head_branch | branch checks)
+          echo $branch_checks
 
         } else {
           $head_branch | branch create
