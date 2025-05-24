@@ -1,13 +1,7 @@
 export def 'branch exists' [] {
   let branch = $in
 
-  let result = (git branch --list $branch | str trim)
-
-  if ($result != "") {
-    true
-  } else {
-    false
-  }
+  (git branch --remote | lines | where {|line| $line | str contains $branch } | count) > 0
 }
 
 export def 'branch create' [] {
