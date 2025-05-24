@@ -19,92 +19,65 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Install Nix
+      uses: DeterminateSystems/nix-installer-action@v17
+
     - name: Checkout repository
+      if: ${{ !env.ACT }}
       uses: actions/checkout@v4
       with:
         ref: ${{ inputs.main-branch }}
         token: ${{ inputs.github-token || github.token }}
 
-    - name: Install Nix
-      uses: DeterminateSystems/nix-installer-action@v17
+    - name: Checkout repository
+      if: ${{ env.ACT }}
+      uses: actions/checkout@v4
+      with:
+        token: ${{ inputs.github-token || github.token }}
 
-    - name: Create or update branch
+    - name: Install Nushell
+      shell: bash
+      run: nix profile install nixpkgs#nushell
+
+    - name: Setup Git Config
       shell: bash
       run: |
         git config --global user.name "${{ github.actor }}"
         git config --global user.email "${{ github.actor }}@users.noreply.github.com"
-        if git ls-remote --exit-code --heads origin ${{ inputs.update-branch }}; then
-          echo "Branch ${{ inputs.update-branch }} exists. Fetching and rebasing."
-          git fetch origin ${{ inputs.update-branch }}:${{ inputs.update-branch }}
-          git checkout ${{ inputs.update-branch }}
-          git rebase origin/${{ inputs.main-branch }}
-        else
-          echo "Branch ${{ inputs.update-branch }} does not exist. Creating new branch."
-          git checkout -b ${{ inputs.update-branch }}
-        fi
+        git fetch --all
 
-    - name: Find and update flake.lock files
-      shell: bash
-      run: |
-        find . -name 'flake.lock' | while read lockfile; do
-          (cd $(dirname $lockfile) && nix flake update)
-          git add $lockfile
-          git commit -m "Update ${lockfile}"
-        done
-
-    - name: Rebase onto main
-      shell: bash
-      run: |
-        git fetch origin
-        git rebase origin/main
-
-    - name: Force push update branch
-      id: update_branch
-      shell: bash
-      run: |
-        git push origin ${{ inputs.update-branch }} --force
-        echo "commit_sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
-
-    - name: Check Workflow Status
-      shell: bash
-      run: |
-        echo "Checking all workflows for commit: ${{ steps.update_branch.outputs.commit_sha }}"
-        sleep 15
-        while true; do
-          statuses=$(gh run list --commit ${{ steps.update_branch.outputs.commit_sha }} --json name,status,conclusion -q '.[] | [.name, .status, .conclusion] | @csv')
-          echo "Current statuses: $statuses"
-          if [ -z "$statuses" ]; then
-            echo "No workflows configured to run on branch push. Proceeding with merge."
-            break
-          elif echo "$statuses" | grep -q '"completed","failure"'; then
-            echo "One or more workflows failed."
-            exit 1
-          elif ! echo "$statuses" | grep -q '"in_progress"'; then
-            echo "All workflows completed successfully."
-            break
-          fi
-          echo "Waiting for workflows to complete..."
-          sleep 30
-        done
+    - name: Update Flake Locks
+      shell: nu {0}
       env:
         GH_TOKEN: ${{ inputs.github-token || github.token }}
-
-    - name: Squash and merge
-      shell: bash
       run: |
-        git checkout ${{ inputs.main-branch }}
-        git merge --squash ${{ inputs.update-branch }}
-        commit_messages=$(git log ${{ inputs.main-branch }}..${{ inputs.update-branch }} --pretty=format:"%s" | sed 's/^/- /')
-        git commit -m "flake.lock updates" -m "$commit_messages"
+        source ${{ github.action_path }}/modules/mod.nu
 
-    - name: Push changes
-      shell: bash
-      run: |
-        git push origin main
+        let head_branch = "${{ inputs.update-branch }}"
+        let target_branch = "${{ inputs.main-branch }}"
 
-    - name: Delete update branch
-      shell: bash
-      run: |
-        gh api -X DELETE repos/${{ github.repository }}/git/refs/heads/${{ inputs.update-branch }}
-      env:
-        GH_TOKEN: ${{ inputs.github-token || github.token }}
+        let branch_exists = ($head_branch | branch exists)
+        echo $"Branch exists? ($branch_exists)"
+
+        if $branch_exists {
+          if ($target_branch | branch rebase) {
+            branch push --force
+            echo $"Rebased latest from ($target_branch) onto ($head_branch)"
+            exit 0
+          }
+
+          let branch_checks = ($head_branch | branch checks)
+          echo $branch_checks
+
+        } else {
+          $head_branch | branch create
+
+           (glob **/flake.nix) | each { |flake|
+              let relative_flake = ($flake | path relative-to $env.PWD)
+              $relative_flake | flake update 
+              branch commit-all -m $"Updated ($relative_flake)"
+           }
+
+          $head_branch | branch push
+
+        }
