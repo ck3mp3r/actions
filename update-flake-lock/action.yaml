@@ -67,7 +67,7 @@ runs:
           $head_branch | branch create
 
            (glob **/flake.nix) | each { |flake|
-              let relative_flake = ($flake | path relative-to $PWD)
+              let relative_flake = ($flake | path relative-to $env.PWD)
               $relative_flake | flake update 
               branch commit-all -m $"Updated ($relative_flake)"
            }
