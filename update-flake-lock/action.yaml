@@ -27,3 +27,11 @@ runs:
 
     - name: Install Nix
       uses: DeterminateSystems/nix-installer-action@v17
+
+    - name: Install Nushell
+      shell: bash
+      run: nix profile add nixpkgs#nushell
+
+    - name: test
+      shell: nu {0}
+      run: ls | where type == dir | get name
