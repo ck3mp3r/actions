@@ -40,7 +40,7 @@ runs:
         if ($head_branch | branch exists) {
           if ($head_branch | branch rebase) {
             branch push --force
-            echo $"Rebased latest from ($target_branch) onto ($head_branch")
+            echo $"Rebased latest from ($target_branch) onto ($head_branch)"
             exit 0
           }
 
