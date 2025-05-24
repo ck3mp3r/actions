@@ -48,6 +48,8 @@ runs:
 
     - name: Update Flake Locks
       shell: nu {0}
+      env:
+        GH_TOKEN: ${{ inputs.github-token || github.token }}
       run: |
         source ${{ github.action_path }}/modules/mod.nu
 
