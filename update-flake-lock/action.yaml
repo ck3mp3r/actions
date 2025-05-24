@@ -48,4 +48,12 @@ runs:
 
         } else {
           $head_branch | branch create
+
+          (glob **/flake.nix) | each { |flake|
+            $flake | flake update 
+            branch commit-all -m $"Updated ($flake)"
+          }
+
+          $head_branch | branch push
+
         }

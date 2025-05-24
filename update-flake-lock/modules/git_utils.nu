@@ -14,6 +14,7 @@ export def 'branch create' [] {
   let branch = $in
 
   git checkout -b $branch
+  $branch
 }
 
 export def 'branch rebase' [] {
@@ -72,4 +73,8 @@ export def 'branch merge' [ --squash (-s)] {
   } else {
     git merge $branch
   }
+}
+
+export def 'branch commit-all' [ --message (-m): string] {
+  git commit -am $"($message)"
 }
