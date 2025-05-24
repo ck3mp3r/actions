@@ -59,10 +59,11 @@ runs:
         } else {
           $head_branch | branch create
 
-          (glob **/flake.nix) | each { |flake|
-            $flake | flake update 
-            branch commit-all -m $"Updated ($flake)"
-          }
+           (glob **/flake.nix) | each { |flake|
+              let relative_flake = ($flake | path relative-to $PWD)
+              $relative_flake | flake update 
+              branch commit-all -m $"Updated ($relative_flake)"
+           }
 
           $head_branch | branch push
 
