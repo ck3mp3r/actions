@@ -37,10 +37,14 @@ runs:
         let head_branch = "${{ inputs.update-branch }}"
         let target_branch = "${{ inputs.main-branch }}"
 
-        let branch_exists = ($head_branch | branch exists)
+        if ($head_branch | branch exists) {
+          if ($head_branch | branch rebase) {
+            branch push --force
+            echo $"Rebased latest from ($target_branch) onto ($head_branch")
+            exit 0
+          }
 
-        if $branch_exists {
-          let rebase_required = ($head_branch | branch rebase)
+          let branch_checks = ($head_branch | branch checks)
 
         } else {
           $head_branch | branch create
