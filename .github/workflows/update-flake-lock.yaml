@@ -16,19 +16,14 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@main
 
       - uses: actions/create-github-app-token@v1
-        if: ${{ ! env.ACT }}
+        if: ${{ !env.ACT }}
         id: token
         with:
           app-id: ${{ secrets.BOT_ID }}
           private-key: ${{ secrets.BOT }}
 
-      - name: Setup Git
-        run: |
-          git config --global user.name "${{ github.actor }}"
-          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
-
       - name: update flake lock
-        if: ${{ ! env.ACT }}
+        if: ${{ !env.ACT }}
         uses: ./update-flake-lock
         with:
           github-token: ${{ steps.token.outputs.token }}

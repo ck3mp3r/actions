@@ -25,7 +25,8 @@ runs:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-        token: ${{ inputs.github-token }}
+        ref: ${{ inputs.main-branch }}
+        token: ${{ inputs.github-token || github.token }}
 
     - name: Install Nushell
       shell: bash
