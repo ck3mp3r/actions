@@ -1,0 +1,19 @@
+---
+name: Nix Flake Check
+
+on:
+  push:
+    branches:
+      - "**"
+
+jobs:
+  nix-flake-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - uses: DeterminateSystems/nix-installer-action@main
+
+      - uses: DeterminateSystems/flake-checker-action@main
