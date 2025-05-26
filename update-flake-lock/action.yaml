@@ -11,6 +11,10 @@ inputs:
     description: "Branch to base off of."
     required: false
     default: "main"
+  checks-required:
+    description: list of comma separated required checks to pass mefore merging
+    required: false
+    default: ""
   github-token:
     description: "GitHub token for authentication"
     required: false
@@ -19,11 +23,82 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Install Nix
+      uses: DeterminateSystems/nix-installer-action@v17
+
     - name: Checkout repository
+      if: ${{ !env.ACT }}
       uses: actions/checkout@v4
       with:
         ref: ${{ inputs.main-branch }}
         token: ${{ inputs.github-token || github.token }}
 
-    - name: Install Nix
-      uses: DeterminateSystems/nix-installer-action@v17
+    - name: Checkout repository
+      if: ${{ env.ACT }}
+      uses: actions/checkout@v4
+      with:
+        token: ${{ inputs.github-token || github.token }}
+
+    - name: Install Nushell
+      shell: bash
+      run: |
+        nix profile install nixpkgs#nushell
+
+    - name: Install GH
+      if: ${{ env.ACT }}
+      shell: bash
+      run: |
+        nix profile install nixpkgs#gh
+
+    - name: Setup Git Config
+      shell: bash
+      run: |
+        git config --global user.name "${{ github.actor }}"
+        git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+        git fetch --all
+
+    - name: Set Remote URL with Token
+      if: ${{ env.ACT }}
+      shell: bash
+      run: |
+        git remote set-url origin https://x-access-token:${{ inputs.github-token || github.token }}@github.com/${{ github.repository }}
+
+    - name: Update Flake Locks
+      shell: nu {0}
+      env:
+        GH_TOKEN: ${{ inputs.github-token || github.token }}
+        GITHUB_TOKEN: ${{ inputs.github-token || github.token }}
+      run: |
+        source ${{ github.action_path }}/modules/mod.nu
+
+        let head_branch = "${{ inputs.update-branch }}"
+        let target_branch = "${{ inputs.main-branch }}"
+        let checks_required = "${{ inputs.checks-required }}" | str split ","
+
+        if ($head_branch | branch exists) {
+          $head_branch | branch switch 
+          if ($target_branch | branch rebase) {
+            $head_branch | branch push --force
+            echo $"Rebased latest from ($target_branch) onto ($head_branch)"
+            exit 0
+          }
+
+          let checks = (git rev-parse HEAD | commit checks --status "success" --checks-required $checks_required)
+          if (($checks | is-not-empty) or ($checks_required | is-empty)) {
+            $head_branch | branch merge --squash --into $target_branch
+            $target_branch | branch push
+            $head_branch | branch delete
+          }
+
+        } else {
+          $head_branch | branch create
+          mut flakes = (
+            (glob **/flake.nix) | each { |flake|
+              let relative_flake = ($flake | path relative-to $env.PWD)
+              $relative_flake | flake update 
+              $"Updated ($relative_flake)"
+            }
+          )
+          branch commit-all -m $"($flakes | str join "\n")"
+          $head_branch | branch push
+        }
