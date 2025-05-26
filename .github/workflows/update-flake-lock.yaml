@@ -16,7 +16,7 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
 
-      - uses: actions/create-github-app-token@v1
+      - uses: actions/create-github-app-token@v2
         if: ${{ !env.ACT }}
         id: token
         with:
