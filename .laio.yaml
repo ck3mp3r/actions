@@ -1,0 +1,14 @@
+---
+name: actions
+
+windows:
+  - name: code
+    panes:
+      - name: Editor
+        commands:
+          - command: ^$env.EDITOR
+
+  - name: misc
+    panes:
+      - flex: 1
+      - flex: 1
