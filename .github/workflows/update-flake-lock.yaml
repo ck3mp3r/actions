@@ -28,7 +28,7 @@ jobs:
         uses: ./update-flake-lock
         with:
           github-token: ${{ steps.token.outputs.token }}
-          checks-required: "nix-flake-check"
+          checks-required: "Nix Flake Check"
 
       - name: update flake lock
         if: ${{ env.ACT }}
