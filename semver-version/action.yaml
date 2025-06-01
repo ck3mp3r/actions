@@ -5,6 +5,10 @@ inputs:
   current-version:
     description: 'Current version'
     required: true
+  detect-branch-builds:
+    description: 'Flag to indicate if this is a branch build'
+    required: false
+    default: 'false'
 outputs:
   semver:
     value: ${{ steps.calc-semver.outputs.semver }}
@@ -16,6 +20,7 @@ runs:
       shell: bash
       run: |
         current_version="${{ inputs.current-version }}"
+        detect_branch_builds="${{ inputs.detect-branch-builds }}"
 
         # Strip the 'v' prefix from the version to get the semantic version
         current_version=${current_version#v}
@@ -44,4 +49,13 @@ runs:
             new_version="$major_version_current.$minor_version_current.$new_patch_version"
             SEMVER_VERSION=$new_version
         fi
+
+        # If detect-branch-builds is true and we're not on main branch, append short SHA
+        if [[ "$detect_branch_builds" == "true" ]]; then
+            current_branch=$(git rev-parse --abbrev-ref HEAD)
+            if [[ "$current_branch" != "main" ]]; then
+                SEMVER_VERSION="${SEMVER_VERSION}-$(git rev-parse --short HEAD)"
+            fi
+        fi
+
         echo "semver=$SEMVER_VERSION" >> $GITHUB_OUTPUT
