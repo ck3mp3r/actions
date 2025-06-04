@@ -24,7 +24,7 @@ export def 'branch rebase' [] {
   let changes = (git log $"HEAD..origin/($target_branch)" --oneline | str trim)
 
   if ($changes != "") {
-    git rebase origin/$target_branch
+    git rebase origin/($target_branch)
     true
   } else {
     false
