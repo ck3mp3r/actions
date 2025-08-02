@@ -1,20 +1,20 @@
 ---
-name: 'SemVer Version Action'
-description: 'Calculates the next semantic version'
+name: "SemVer Version Action"
+description: "Calculates the next semantic version"
 inputs:
   current-version:
-    description: 'Current version'
+    description: "Current version"
     required: true
   detect-branch-builds:
-    description: 'Flag to indicate if this is a branch build'
+    description: "Flag to indicate if this is a branch build"
     required: false
-    default: 'false'
+    default: "false"
 outputs:
   semver:
     value: ${{ steps.calc-semver.outputs.semver }}
-    description: 'Generated SemVer version'
+    description: "Generated SemVer version"
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
     - id: calc-semver
       shell: bash
@@ -25,8 +25,8 @@ runs:
         # Strip the 'v' prefix from the version to get the semantic version
         current_version=${current_version#v}
 
-        # Fetch latest tag prefixed with 'v'
-        latest_tag=$(git tag | grep '^v[0-9]\+\.[0-9]\+\.[0-9]\+$' | sort -V | tail -n 1)
+        # Fetch latest tag prefixed with 'v' (make grep non-fatal)
+        latest_tag=$(git tag | grep '^v[0-9]\+\.[0-9]\+\.[0-9]\+$' | sort -V | tail -n 1 || true)
 
         # Strip the 'v' prefix from the tag to get the semantic version
         latest_semver=${latest_tag#v}
@@ -40,7 +40,13 @@ runs:
         minor_version_latest=$(echo $latest_semver | cut -d'.' -f2)
         patch_version_latest=$(echo $latest_semver | cut -d'.' -f3)
 
-        # Defensive: ensure variables are not empty before arithmetic
+        # Default major/minor/patch to 0 if empty
+        if [[ -z "$major_version_latest" ]]; then
+          major_version_latest=0
+        fi
+        if [[ -z "$minor_version_latest" ]]; then
+          minor_version_latest=0
+        fi
         if [[ -z "$patch_version_latest" ]]; then
           patch_version_latest=0
         fi
@@ -63,7 +69,6 @@ runs:
             fi
         fi
 
-        # Defensive: ensure SEMVER_VERSION is not empty
         if [[ -z "$SEMVER_VERSION" ]]; then
           echo "Error: SEMVER_VERSION is empty. Check input and tags." >&2
           exit 1
