@@ -40,6 +40,11 @@ runs:
         minor_version_latest=$(echo $latest_semver | cut -d'.' -f2)
         patch_version_latest=$(echo $latest_semver | cut -d'.' -f3)
 
+        # Defensive: ensure variables are not empty before arithmetic
+        if [[ -z "$patch_version_latest" ]]; then
+          patch_version_latest=0
+        fi
+
         # If major or minor versions have changed, tag with the version from the input
         if [[ "$major_version_current" != "$major_version_latest" || "$minor_version_current" != "$minor_version_latest" ]]; then
             SEMVER_VERSION=$current_version
@@ -58,4 +63,9 @@ runs:
             fi
         fi
 
+        # Defensive: ensure SEMVER_VERSION is not empty
+        if [[ -z "$SEMVER_VERSION" ]]; then
+          echo "Error: SEMVER_VERSION is empty. Check input and tags." >&2
+          exit 1
+        fi
         echo "semver=$SEMVER_VERSION" >> $GITHUB_OUTPUT
