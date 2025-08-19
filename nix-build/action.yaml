@@ -12,6 +12,10 @@ inputs:
   version:
     description: version
     required: true
+  enable-build-logs:
+    description: enable verbose build log, on by default
+    required: false
+    default: "true"
 
 outputs:
   nix-sha256:
@@ -34,7 +38,11 @@ runs:
       id: compile
       shell: bash
       run: |
-        nix build .#${{ inputs.name }}-${{ inputs.target }}
+        if [ "${{ inputs.enable-build-logs }}" = "true" ]; then
+          nix build --print-build-logs .#${{ inputs.name }}-${{ inputs.target }}
+        else
+          nix build .#${{ inputs.name }}-${{ inputs.target }}
+        fi
         echo "artefact-name=${{ inputs.name }}-${{ inputs.version }}-${{ inputs.target }}" >> $GITHUB_OUTPUT
 
     - name: Create tgz Archive
