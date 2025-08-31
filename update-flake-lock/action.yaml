@@ -71,34 +71,10 @@ runs:
       run: |
         source ${{ github.action_path }}/modules/mod.nu
 
-        let head_branch = "${{ inputs.update-branch }}"
-        let target_branch = "${{ inputs.main-branch }}"
-        let checks_required = "${{ inputs.checks-required }}" | str split ","
-
-        if ($head_branch | branch exists) {
-          $head_branch | branch switch 
-          if ($target_branch | branch rebase) {
-            $head_branch | branch push --force
-            echo $"Rebased latest from ($target_branch) onto ($head_branch)"
-            exit 0
-          }
-
-          let checks = (git rev-parse HEAD | commit checks --status "success" --checks-required $checks_required)
-          if (($checks | is-not-empty) or ($checks_required | is-empty)) {
-            $head_branch | branch merge --squash --into $target_branch
-            $target_branch | branch push
-            $head_branch | branch delete
-          }
-
+        let checks_required = if ("${{ inputs.checks-required }}" | is-empty) {
+          []
         } else {
-          $head_branch | branch create
-          mut flakes = (
-            (glob **/flake.nix) | each { |flake|
-              let relative_flake = ($flake | path relative-to $env.PWD)
-              $relative_flake | flake update 
-              $"Updated ($relative_flake)"
-            }
-          )
-          branch commit-all -m $"($flakes | str join "\n")"
-          $head_branch | branch push
+          "${{ inputs.checks-required }}" | str split ","
         }
+
+        update-flake-locks "${{ inputs.update-branch }}" "${{ inputs.main-branch }}" $checks_required

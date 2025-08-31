@@ -1,0 +1,69 @@
+use ./git_utils.nu *
+use ./flake_utils.nu *
+use ./utils.nu *
+
+export def update-flake-locks [
+  head_branch: string
+  target_branch: string
+  checks_required: list = []
+] {
+  try {
+    if ($head_branch | branch exists) {
+      print $"Branch ($head_branch) already exists, attempting to update..."
+
+      $head_branch | branch switch
+
+      if ($target_branch | branch rebase) {
+        $head_branch | branch push --force
+        print $"Rebased latest changes from ($target_branch) onto ($head_branch)"
+        print $"Branch ($head_branch) has been updated and force-pushed"
+        print "The workflow will need to run again to perform the merge"
+        return
+      }
+
+      let checks = (git rev-parse HEAD | commit checks --status "success" --checks-required $checks_required)
+
+      if (($checks | is-not-empty) or ($checks_required | is-empty)) {
+        print $"Merging ($head_branch) into ($target_branch)..."
+        $head_branch | branch merge --squash --into $target_branch
+        $target_branch | branch push
+        $head_branch | branch delete
+        print $"Successfully merged and deleted ($head_branch)"
+      } else {
+        print "Required checks have not passed yet"
+      }
+    } else {
+      print $"Creating new branch ($head_branch) for flake updates..."
+
+      $head_branch | branch create
+
+      let flakes = (glob **/flake.nix)
+
+      if ($flakes | is-empty) {
+        error make {msg: "No flake.nix files found in repository"}
+      }
+
+      let updates = $flakes | each {|flake|
+        let relative_flake = ($flake | path relative-to $env.PWD)
+
+        try {
+          $relative_flake | flake update
+          $"Updated ($relative_flake)"
+        } catch {
+          error make {msg: $"Failed to update flake: ($relative_flake)"}
+        }
+      }
+
+      if ($updates | is-not-empty) {
+        branch commit-all -m ($updates | str join "\n")
+        $head_branch | branch push
+        print $"Successfully created branch ($head_branch) with flake updates"
+      } else {
+        error make {msg: "No flakes were successfully updated"}
+      }
+    }
+  } catch {|err|
+    print -e $"Error: ($err.msg)"
+    exit 1
+  }
+}
