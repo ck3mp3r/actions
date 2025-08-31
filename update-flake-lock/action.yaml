@@ -12,7 +12,7 @@ inputs:
     required: false
     default: "main"
   checks-required:
-    description: list of comma separated required checks to pass mefore merging
+    description: List of comma separated required checks to pass before merging
     required: false
     default: ""
   github-token:
@@ -24,18 +24,18 @@ runs:
   using: "composite"
   steps:
     - name: Install Nix
-      uses: DeterminateSystems/nix-installer-action@v17
+      uses: DeterminateSystems/nix-installer-action@v19
 
     - name: Checkout repository
       if: ${{ !env.ACT }}
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         ref: ${{ inputs.main-branch }}
         token: ${{ inputs.github-token || github.token }}
 
     - name: Checkout repository
       if: ${{ env.ACT }}
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         token: ${{ inputs.github-token || github.token }}
 
