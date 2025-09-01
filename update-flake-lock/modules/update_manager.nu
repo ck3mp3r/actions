@@ -11,13 +11,12 @@ def update-all-flakes [] {
 
   let updates = $flakes | each {|flake|
     let flake_dir = ($flake | path dirname)
-    let relative_dir = ($flake_dir | path relative-to $env.PWD)
 
     try {
       $flake_dir | flake update
-      $"Updated flake in ($relative_dir)"
+      $flake
     } catch {
-      error make {msg: $"Failed to update flake in: ($relative_dir)"}
+      error make {msg: $"Failed to update flake: ($flake)"}
     }
   }
 
