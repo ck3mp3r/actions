@@ -9,17 +9,44 @@ export def update-flake-locks [
 ] {
   try {
     if ($head_branch | branch exists) {
-      print $"Branch ($head_branch) already exists, attempting to update..."
+      print $"Branch ($head_branch) already exists, checking if update is needed..."
 
-      $head_branch | branch switch
+      # Fetch latest branches
+      git fetch origin $target_branch
+      git fetch origin $head_branch
 
-      if ($target_branch | branch rebase) {
-        $head_branch | branch push --force
-        print $"Rebased latest changes from ($target_branch) onto ($head_branch)"
-        print $"Branch ($head_branch) has been updated and force-pushed"
-        print "The workflow will need to run again to perform the merge"
-        return
+      # Check if main has new commits since the branch was created
+      let main_has_updates = (git log $"origin/($head_branch)..origin/($target_branch)" --oneline | str trim | is-not-empty)
+
+      if $main_has_updates {
+        print $"Main branch has new commits, updating ($head_branch)..."
+
+        # Reset branch to latest main
+        git checkout -B $head_branch origin/$target_branch
+
+        # Update flake.lock files
+        let flakes = (glob **/flake.nix)
+        let updates = $flakes | each {|flake|
+          let relative_flake = ($flake | path relative-to $env.PWD)
+          try {
+            $relative_flake | flake update
+            $"Updated ($relative_flake)"
+          } catch {
+            error make {msg: $"Failed to update flake: ($relative_flake)"}
+          }
+        }
+
+        if ($updates | is-not-empty) {
+          branch commit-all -m ($updates | str join "\n")
+          $head_branch | branch push --force
+          print $"Branch ($head_branch) has been updated and force-pushed"
+          print "The workflow will need to run again to perform the merge"
+          return
+        }
       }
+
+      # Checkout the branch to check its status
+      git checkout $head_branch
 
       let checks = (git rev-parse HEAD | commit checks --status "success" --checks-required $checks_required)
 
