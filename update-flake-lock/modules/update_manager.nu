@@ -31,7 +31,7 @@ def create-or-update-branch [
   let updates = (update-all-flakes)
 
   if ($updates | is-not-empty) {
-    branch commit-all -m ($updates | str join "\n")
+    branch commit-all -m "chore: update flake.lock(s)"
 
     if $force_update {
       $head_branch | branch push --force
