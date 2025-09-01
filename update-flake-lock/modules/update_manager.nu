@@ -27,12 +27,13 @@ export def update-flake-locks [
         # Update flake.lock files
         let flakes = (glob **/flake.nix)
         let updates = $flakes | each {|flake|
-          let relative_flake = ($flake | path relative-to $env.PWD)
+          let flake_dir = ($flake | path dirname)
+          let relative_dir = ($flake_dir | path relative-to $env.PWD)
           try {
-            $relative_flake | flake update
-            $"Updated ($relative_flake)"
+            $flake_dir | flake update
+            $"Updated flake in ($relative_dir)"
           } catch {
-            error make {msg: $"Failed to update flake: ($relative_flake)"}
+            error make {msg: $"Failed to update flake in: ($relative_dir)"}
           }
         }
 
@@ -71,13 +72,14 @@ export def update-flake-locks [
       }
 
       let updates = $flakes | each {|flake|
-        let relative_flake = ($flake | path relative-to $env.PWD)
+        let flake_dir = ($flake | path dirname)
+        let relative_dir = ($flake_dir | path relative-to $env.PWD)
 
         try {
-          $relative_flake | flake update
-          $"Updated ($relative_flake)"
+          $flake_dir | flake update
+          $"Updated flake in ($relative_dir)"
         } catch {
-          error make {msg: $"Failed to update flake: ($relative_flake)"}
+          error make {msg: $"Failed to update flake in: ($relative_dir)"}
         }
       }
 
