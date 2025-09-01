@@ -2,6 +2,50 @@ use ./git_utils.nu *
 use ./flake_utils.nu *
 use ./utils.nu *
 
+def update-all-flakes [] {
+  let flakes = (glob **/flake.nix)
+
+  if ($flakes | is-empty) {
+    error make {msg: "No flake.nix files found in repository"}
+  }
+
+  let updates = $flakes | each {|flake|
+    let flake_dir = ($flake | path dirname)
+    let relative_dir = ($flake_dir | path relative-to $env.PWD)
+
+    try {
+      $flake_dir | flake update
+      $"Updated flake in ($relative_dir)"
+    } catch {
+      error make {msg: $"Failed to update flake in: ($relative_dir)"}
+    }
+  }
+
+  $updates
+}
+
+def create-or-update-branch [
+  head_branch: string
+  --force-update
+] {
+  let updates = (update-all-flakes)
+
+  if ($updates | is-not-empty) {
+    branch commit-all -m ($updates | str join "\n")
+
+    if $force_update {
+      $head_branch | branch push --force
+      print $"Branch ($head_branch) has been updated and force-pushed"
+    } else {
+      $head_branch | branch push
+      print $"Successfully created branch ($head_branch) with flake updates"
+    }
+    true
+  } else {
+    error make {msg: "No flakes were successfully updated"}
+  }
+}
+
 export def update-flake-locks [
   head_branch: string
   target_branch: string
@@ -24,31 +68,16 @@ export def update-flake-locks [
         # Reset branch to latest main
         git checkout -B $head_branch $"origin/($target_branch)"
 
-        # Update flake.lock files
-        let flakes = (glob **/flake.nix)
-        let updates = $flakes | each {|flake|
-          let flake_dir = ($flake | path dirname)
-          let relative_dir = ($flake_dir | path relative-to $env.PWD)
-          try {
-            $flake_dir | flake update
-            $"Updated flake in ($relative_dir)"
-          } catch {
-            error make {msg: $"Failed to update flake in: ($relative_dir)"}
-          }
-        }
-
-        if ($updates | is-not-empty) {
-          branch commit-all -m ($updates | str join "\n")
-          $head_branch | branch push --force
-          print $"Branch ($head_branch) has been updated and force-pushed"
-          print "The workflow will need to run again to perform the merge"
-          return
-        }
+        # Update and push
+        create-or-update-branch $head_branch --force-update
+        print "The workflow will need to run again to perform the merge"
+        return
       }
 
       # Checkout the branch to check its status
       git checkout $head_branch
 
+      # Check if required checks have passed
       let checks = (git rev-parse HEAD | commit checks --status "success" --checks-required $checks_required)
 
       if (($checks | is-not-empty) or ($checks_required | is-empty)) {
@@ -64,32 +93,7 @@ export def update-flake-locks [
       print $"Creating new branch ($head_branch) for flake updates..."
 
       $head_branch | branch create
-
-      let flakes = (glob **/flake.nix)
-
-      if ($flakes | is-empty) {
-        error make {msg: "No flake.nix files found in repository"}
-      }
-
-      let updates = $flakes | each {|flake|
-        let flake_dir = ($flake | path dirname)
-        let relative_dir = ($flake_dir | path relative-to $env.PWD)
-
-        try {
-          $flake_dir | flake update
-          $"Updated flake in ($relative_dir)"
-        } catch {
-          error make {msg: $"Failed to update flake in: ($relative_dir)"}
-        }
-      }
-
-      if ($updates | is-not-empty) {
-        branch commit-all -m ($updates | str join "\n")
-        $head_branch | branch push
-        print $"Successfully created branch ($head_branch) with flake updates"
-      } else {
-        error make {msg: "No flakes were successfully updated"}
-      }
+      create-or-update-branch $head_branch
     }
   } catch {|err|
     print -e $"Error: ($err.msg)"
