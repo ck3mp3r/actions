@@ -22,7 +22,7 @@ export def update-flake-locks [
         print $"Main branch has new commits, updating ($head_branch)..."
 
         # Reset branch to latest main
-        git checkout -B $head_branch origin/$target_branch
+        git checkout -B $head_branch $"origin/($target_branch)"
 
         # Update flake.lock files
         let flakes = (glob **/flake.nix)
