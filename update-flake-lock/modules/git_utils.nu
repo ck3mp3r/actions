@@ -5,14 +5,14 @@ export def 'branch exists' [] {
 }
 
 export def 'branch switch' [] {
-  git switch $in
+  git switch $in --
   $in
 }
 
 export def 'branch create' [] {
   let branch = $in
 
-  git checkout -b $branch
+  git checkout -b $branch --
   $branch
 }
 
@@ -52,7 +52,7 @@ export def 'branch delete' [] {
 export def 'branch merge' [ --into (-i): string = "main" --squash (-s)] {
   let head_branch = $in
 
-  git checkout $into
+  git switch $into --
 
   if ($squash) {
     git merge --squash $head_branch

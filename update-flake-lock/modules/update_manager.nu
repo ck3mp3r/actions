@@ -65,7 +65,7 @@ export def update-flake-locks [
         print $"Main branch has new commits, updating ($head_branch)..."
 
         # Reset branch to latest main
-        git checkout -B $head_branch $"origin/($target_branch)"
+        git checkout -B $head_branch $"origin/($target_branch)" --
 
         # Update and push
         create-or-update-branch $head_branch --force-update
@@ -74,7 +74,7 @@ export def update-flake-locks [
       }
 
       # Checkout the branch to check its status
-      git checkout $head_branch
+      git switch $head_branch
 
       # Check if required checks have passed
       let checks = (git rev-parse HEAD | commit checks --status "success" --checks-required $checks_required)
