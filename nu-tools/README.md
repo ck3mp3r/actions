@@ -103,7 +103,7 @@ A GitHub Action that provides modular Nushell tools for release workflows and CI
 - name: Use Nu Tools in workflow
   shell: bash
   run: |
-    nu -c 'use nu-tools *; get-latest-tag'
+    nu -c 'use nu-tools/mod.nu *; get-latest-tag'
 ```
 
 ## Modules
@@ -149,7 +149,7 @@ jobs:
       - name: Create Release
         run: |
           nu -c '
-            use nu-tools *
+            use nu-tools/mod.nu *
             let latest_tag = (get-latest-tag)
             let current_version = (open Cargo.toml | get package.version)
             let new_version = (semver-calculate $latest_tag $current_version)
