@@ -9,9 +9,11 @@ A GitHub Action that provides modular Nushell tools for release workflows and CI
   uses: ./actions/nu-tools
 
 - name: Use Nu Tools in workflow
-  shell: bash
+  shell: nu {0}
   run: |
-    nu -c 'use nu-tools *; get-latest-tag'
+    const NU_LIB_DIRS = ["/home/runner/.local/share/nushell"]
+    use nu-tools *
+    get-latest-tag
 ```
 
 ## Modules
@@ -55,20 +57,20 @@ jobs:
         uses: ./actions/nu-tools
         
       - name: Create Release
+        shell: nu {0}
         run: |
-          nu -c '
-            use nu-tools *
-            let latest_tag = (get-latest-tag)
-            let current_version = (open Cargo.toml | get package.version)
-            let new_version = (semver-calculate $latest_tag $current_version)
+          const NU_LIB_DIRS = ["/home/runner/.local/share/nushell"]
+          use nu-tools *
+          let latest_tag = (get-latest-tag)
+          let current_version = (open Cargo.toml | get package.version)
+          let new_version = (semver-calculate $latest_tag $current_version)
+          
+          $new_version 
+            | create-release-branch 
+            | update-cargo-version 
+            | commit-files $"Release ($new_version)"
             
-            $new_version 
-              | create-release-branch 
-              | update-cargo-version 
-              | commit-files $"Release ($new_version)"
-              
-            create-github-release $new_version
-          '
+          create-github-release $new_version
 ```
 
 ## Requirements
