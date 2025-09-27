@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ---
 name: "Nu Tools Setup"
 description: "Sets up modular Nushell tools for release workflows"
@@ -41,52 +40,3 @@ runs:
 branding:
   icon: "package"
   color: "blue"
-
-||||||| parent of 60e9ac5 (feat: add nu-tools action with modular nushell release workflow tools)
-=======
-name: 'Nu Tools Setup'
-description: 'Sets up modular Nushell tools for release workflows'
-author: 'ck3mp3r'
-
-inputs: {}
-
-runs:
-  using: 'composite'
-  steps:
-    - name: Install Nix
-      uses: DeterminateSystems/nix-installer-action@v20
-
-    - name: Setup Nushell via Nix
-      shell: bash
-      run: |
-        echo "Installing Nushell via nix..."
-        # Always install latest from nixpkgs since version pinning in nix is more complex
-        # and would require specific nixpkgs revisions
-        nix profile install nixpkgs#nushell
-        
-        # Verify installation
-        nu --version
-
-    - name: Install Nu Tools Modules
-      shell: bash
-      run: |
-        # Create nushell lib directory structure
-        mkdir -p ~/.local/share/nushell/nu-tools
-        # Copy all module files into the nu-tools directory
-        cp ${{ github.action_path }}/modules/*.nu ~/.local/share/nushell/nu-tools/
-        
-        # Create nushell config directory and set up NU_LIB_DIRS
-        mkdir -p ~/.config/nushell
-        echo 'const NU_LIB_DIRS = ["~/.local/share/nushell"]' > ~/.config/nushell/config.nu
-        
-    - name: Verify Installation
-      shell: nu {0}
-      run: |
-        print "Verifying Nu Tools installation..."
-        use nu-tools *
-        print "Nu Tools modules loaded successfully!"
-
-branding:
-  icon: 'package'
-  color: 'blue'
->>>>>>> 60e9ac5 (feat: add nu-tools action with modular nushell release workflow tools)
