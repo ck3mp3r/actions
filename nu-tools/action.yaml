@@ -1,0 +1,51 @@
+name: 'Nu Tools Setup'
+description: 'Sets up modular Nushell tools for release workflows'
+author: 'ck3mp3r'
+
+inputs: {}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install Nix
+      uses: DeterminateSystems/nix-installer-action@v20
+
+    - name: Setup Nushell via Nix
+      shell: bash
+      run: |
+        echo "Installing Nushell via nix..."
+        # Always install latest from nixpkgs since version pinning in nix is more complex
+        # and would require specific nixpkgs revisions
+        nix profile install nixpkgs#nushell
+        
+        # Verify installation
+        nu --version
+
+    - name: Install Nu Tools Modules
+      shell: bash
+      run: |
+        # Create nushell config directory
+        mkdir -p ~/.config/nushell
+        
+        # Copy modules to a location accessible by nushell
+        cp -r ${{ github.action_path }}/modules ~/.config/nushell/nu-tools
+        
+        # Add module path to nushell config if it doesn't exist
+        if [ ! -f ~/.config/nushell/config.nu ]; then
+          echo '$env.NU_LIB_DIRS = ($env.NU_LIB_DIRS | append "~/.config/nushell")' > ~/.config/nushell/config.nu
+        else
+          # Check if the module path is already in config
+          if ! grep -q "nu-tools" ~/.config/nushell/config.nu; then
+            echo '$env.NU_LIB_DIRS = ($env.NU_LIB_DIRS | append "~/.config/nushell")' >> ~/.config/nushell/config.nu
+          fi
+        fi
+
+    - name: Verify Installation
+      shell: bash
+      run: |
+        echo "Verifying Nu Tools installation..."
+        nu -c 'use nu-tools *; print "Nu Tools modules loaded successfully"'
+
+branding:
+  icon: 'package'
+  color: 'blue'
