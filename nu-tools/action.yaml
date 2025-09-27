@@ -24,9 +24,10 @@ runs:
     - name: Install Nu Tools Modules
       shell: bash
       run: |
-        # Create nushell lib directory and copy the entire modules directory as nu-tools
-        mkdir -p ~/.local/share/nushell
-        cp -r ${{ github.action_path }}/modules ~/.local/share/nushell/nu-tools
+        # Create nushell lib directory structure
+        mkdir -p ~/.local/share/nushell/nu-tools
+        # Copy all module files into the nu-tools directory
+        cp ${{ github.action_path }}/modules/*.nu ~/.local/share/nushell/nu-tools/
         
         # Set NU_LIB_DIRS environment variable for current and future steps
         echo "NU_LIB_DIRS=$HOME/.local/share/nushell" >> $GITHUB_ENV
@@ -36,6 +37,9 @@ runs:
       run: |
         echo "Verifying Nu Tools installation..."
         echo "NU_LIB_DIRS: $NU_LIB_DIRS"
+        echo "Contents of ~/.local/share/nushell/:"
+        ls -la ~/.local/share/nushell/
+        echo "Contents of ~/.local/share/nushell/nu-tools/:"
         ls -la ~/.local/share/nushell/nu-tools/
         nu -c 'print "Nushell is working"'
         nu -c 'use nu-tools *; print "Nu Tools modules loaded successfully"'
