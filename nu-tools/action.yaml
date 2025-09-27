@@ -33,16 +33,14 @@ runs:
         echo "NU_LIB_DIRS=$HOME/.local/share/nushell" >> $GITHUB_ENV
 
     - name: Verify Installation
-      shell: bash
+      shell: nu {0}
+      env:
+        NU_LIB_DIRS: /home/runner/.local/share/nushell
       run: |
-        echo "Verifying Nu Tools installation..."
-        echo "NU_LIB_DIRS: $NU_LIB_DIRS"
-        echo "Contents of ~/.local/share/nushell/:"
-        ls -la ~/.local/share/nushell/
-        echo "Contents of ~/.local/share/nushell/nu-tools/:"
-        ls -la ~/.local/share/nushell/nu-tools/
-        nu -c 'print "Nushell is working"'
-        NU_LIB_DIRS=$HOME/.local/share/nushell nu -c 'use nu-tools *; print "Nu Tools modules loaded successfully"'
+        print "Verifying Nu Tools installation..."
+        print $"NU_LIB_DIRS: ($env.NU_LIB_DIRS)"
+        use nu-tools *
+        print "Nu Tools modules loaded successfully!"
 
 branding:
   icon: 'package'
