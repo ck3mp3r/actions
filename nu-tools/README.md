@@ -11,7 +11,6 @@ A GitHub Action that provides modular Nushell tools for release workflows and CI
 - name: Use Nu Tools in workflow
   shell: nu {0}
   run: |
-    const NU_LIB_DIRS = ["/home/runner/.local/share/nushell"]
     use nu-tools *
     get-latest-tag
 ```
@@ -59,7 +58,6 @@ jobs:
       - name: Create Release
         shell: nu {0}
         run: |
-          const NU_LIB_DIRS = ["/home/runner/.local/share/nushell"]
           use nu-tools *
           let latest_tag = (get-latest-tag)
           let current_version = (open Cargo.toml | get package.version)

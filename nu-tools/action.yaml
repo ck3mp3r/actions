@@ -29,14 +29,14 @@ runs:
         # Copy all module files into the nu-tools directory
         cp ${{ github.action_path }}/modules/*.nu ~/.local/share/nushell/nu-tools/
         
-        # Create a nu-lib-dirs.nu file for easy sourcing in workflows
-        echo 'const NU_LIB_DIRS = ["'$HOME'/.local/share/nushell"]' > ~/.local/share/nushell/nu-lib-dirs.nu
-
+        # Create nushell config directory and set up NU_LIB_DIRS
+        mkdir -p ~/.config/nushell
+        echo 'const NU_LIB_DIRS = ["~/.local/share/nushell"]' > ~/.config/nushell/config.nu
+        
     - name: Verify Installation
       shell: nu {0}
       run: |
         print "Verifying Nu Tools installation..."
-        const NU_LIB_DIRS = ["/home/runner/.local/share/nushell"]
         use nu-tools *
         print "Nu Tools modules loaded successfully!"
 
