@@ -38,7 +38,7 @@ runs:
         echo "NU_LIB_DIRS: $NU_LIB_DIRS"
         ls -la ~/.local/share/nushell/nu-tools/
         nu -c 'print "Nushell is working"'
-        nu -c 'use nu-tools/mod.nu *; print "Nu Tools modules loaded successfully"'
+        nu -c 'use nu-tools *; print "Nu Tools modules loaded successfully"'
 
 branding:
   icon: 'package'
