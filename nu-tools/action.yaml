@@ -24,27 +24,21 @@ runs:
     - name: Install Nu Tools Modules
       shell: bash
       run: |
-        # Create nushell config directory
-        mkdir -p ~/.config/nushell
+        # Create nushell lib directory and copy modules there
+        mkdir -p ~/.local/share/nushell/nu-tools
+        cp ${{ github.action_path }}/modules/*.nu ~/.local/share/nushell/nu-tools/
         
-        # Copy modules to a location accessible by nushell
-        cp -r ${{ github.action_path }}/modules ~/.config/nushell/nu-tools
-        
-        # Add module path to nushell config if it doesn't exist
-        if [ ! -f ~/.config/nushell/config.nu ]; then
-          echo '$env.NU_LIB_DIRS = ($env.NU_LIB_DIRS | append "~/.config/nushell")' > ~/.config/nushell/config.nu
-        else
-          # Check if the module path is already in config
-          if ! grep -q "nu-tools" ~/.config/nushell/config.nu; then
-            echo '$env.NU_LIB_DIRS = ($env.NU_LIB_DIRS | append "~/.config/nushell")' >> ~/.config/nushell/config.nu
-          fi
-        fi
+        # Set NU_LIB_DIRS environment variable for current and future steps
+        echo "NU_LIB_DIRS=$HOME/.local/share/nushell" >> $GITHUB_ENV
 
     - name: Verify Installation
       shell: bash
       run: |
         echo "Verifying Nu Tools installation..."
-        nu -c 'use nu-tools *; print "Nu Tools modules loaded successfully"'
+        echo "NU_LIB_DIRS: $NU_LIB_DIRS"
+        ls -la ~/.local/share/nushell/nu-tools/
+        nu -c 'print "Nushell is working"'
+        nu -c 'use nu-tools/mod.nu *; print "Nu Tools modules loaded successfully"'
 
 branding:
   icon: 'package'
