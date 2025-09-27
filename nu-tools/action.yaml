@@ -75,16 +75,14 @@ runs:
         # Copy all module files into the nu-tools directory
         cp ${{ github.action_path }}/modules/*.nu ~/.local/share/nushell/nu-tools/
         
-        # Set NU_LIB_DIRS environment variable for current and future steps
-        echo "NU_LIB_DIRS=$HOME/.local/share/nushell" >> $GITHUB_ENV
+        # Create a nu-lib-dirs.nu file for easy sourcing in workflows
+        echo 'const NU_LIB_DIRS = ["'$HOME'/.local/share/nushell"]' > ~/.local/share/nushell/nu-lib-dirs.nu
 
     - name: Verify Installation
       shell: nu {0}
-      env:
-        NU_LIB_DIRS: /home/runner/.local/share/nushell
       run: |
         print "Verifying Nu Tools installation..."
-        print $"NU_LIB_DIRS: ($env.NU_LIB_DIRS)"
+        const NU_LIB_DIRS = ["/home/runner/.local/share/nushell"]
         use nu-tools *
         print "Nu Tools modules loaded successfully!"
 
