@@ -1,0 +1,84 @@
+# Example GitHub Repository Configuration
+# Copy this file to .github/repo-config.yaml in your repository and customize
+# 
+# NOTE: This format is NOT compatible with GitHub Safe-Settings app
+# This is a custom configuration format for the github-settings action
+
+repository:
+  # Merge and branch settings
+  allow_merge_commit: false      # Disable merge commits for linear history
+  allow_rebase_merge: true       # Enable rebase merging
+  allow_squash_merge: true       # Enable squash merging
+  allow_auto_merge: true         # Enable auto-merge on PRs
+  delete_branch_on_merge: true   # Auto-delete feature branches after merge
+  allow_update_branch: true      # Allow updating PR branches when behind
+
+branch_protection:
+  branch: main                   # Branch to protect (usually 'main' or 'master')
+  
+  # Pull request review requirements
+  required_pull_request_reviews:
+    required_approving_review_count: 1        # Number of required approvals
+    dismiss_stale_reviews: true               # Dismiss reviews when new commits pushed
+    require_code_owner_reviews: false        # Require code owner approval
+    require_last_push_approval: false        # Require approval on latest push
+    
+    # Allow these entities to bypass PR requirements
+    bypass_pull_request_allowances:
+      apps:
+        - "renovate[bot]"          # Renovate dependency updates
+        - "dependabot[bot]"        # Dependabot security updates
+        - "github-actions[bot]"    # GitHub Actions automated changes
+      users: []                    # Add usernames if needed
+      teams: []                    # Add team names if needed
+  
+  # History and merging
+  required_linear_history: true              # Enforce linear history (no merge commits)
+  
+  # Status check requirements
+  required_status_checks:
+    strict: true                   # Require branches to be up to date before merging
+    contexts:                      # List of required status checks
+      - "ci/build"                 # Example: CI build check
+      - "ci/test"                  # Example: Test suite
+      # Add your required checks here
+      
+  # Administrative settings
+  enforce_admins: true             # Apply all rules to repository administrators
+  required_conversation_resolution: true    # Require all conversations resolved
+  
+  # Branch protection controls
+  allow_force_pushes: false        # Block force pushes
+  allow_deletions: false          # Block branch deletion
+  block_creations: false          # Allow new branch creation
+  lock_branch: false              # Don't make branch read-only
+  allow_fork_syncing: false       # Block syncing from forks when locked
+  
+  # Access restrictions (null = no restrictions, rely on PR requirements)
+  restrictions: null
+
+# Alternative configurations for different repository types:
+
+# For open source projects (more permissive):
+# repository:
+#   allow_merge_commit: false
+#   allow_rebase_merge: true
+#   allow_squash_merge: true
+#   allow_auto_merge: false        # Disable auto-merge for more control
+#   delete_branch_on_merge: true
+#   allow_update_branch: true
+#
+# branch_protection:
+#   required_pull_request_reviews:
+#     required_approving_review_count: 2  # Require more approvals
+#     require_code_owner_reviews: true    # Require code owner approval
+
+# For private enterprise repos (more restrictive):
+# branch_protection:
+#   required_pull_request_reviews:
+#     required_approving_review_count: 2
+#     require_last_push_approval: true    # Require approval on latest push
+#   enforce_admins: true
+#   restrictions:                          # Restrict who can push
+#     users: ["admin-user"]
+#     teams: ["core-team"]

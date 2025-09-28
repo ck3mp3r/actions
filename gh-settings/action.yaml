@@ -1,0 +1,90 @@
+---
+name: "GitHub Settings Manager"
+description: "Idempotently manage GitHub repository settings including branch protection, merge settings, and security policies"
+author: "ck3mp3r"
+
+inputs:
+  settings-file:
+    description: "Path to repository configuration file"
+    required: false
+    default: ".github/repo-config.yaml"
+  github-token:
+    description: "GitHub token for API access"
+    required: false
+    default: ${{ github.token }}
+  dry-run:
+    description: "Show what would be changed without applying"
+    required: false
+    default: "false"
+  compare-only:
+    description: "Only compare current vs desired settings"
+    required: false
+    default: "false"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install Nix
+      uses: DeterminateSystems/nix-installer-action@v20
+
+    - name: Setup Nushell and GitHub CLI via Nix
+      shell: bash
+      run: |
+        echo "Installing Nushell and GitHub CLI via nix..."
+        nix profile install nixpkgs#nushell nixpkgs#gh
+        nu --version
+        gh --version
+
+    - name: Apply GitHub Settings
+      shell: nu {0}
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        SETTINGS_FILE: ${{ inputs.settings-file }}
+        DRY_RUN: ${{ inputs.dry-run }}
+        COMPARE_ONLY: ${{ inputs.compare-only }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+      run: |
+        # GitHub Settings Management Script
+        
+        # Parse repository owner and name
+        let repo_parts = ($env.GITHUB_REPOSITORY | split row "/")
+        let owner = ($repo_parts | first)
+        let repo = ($repo_parts | last)
+        
+        print $"Managing repository configuration for ($owner)/($repo)"
+        print $"Configuration file: ($env.SETTINGS_FILE)"
+        print $"Dry run: ($env.DRY_RUN)"
+        print $"Compare only: ($env.COMPARE_ONLY)"
+        
+        # Load the GitHub settings module
+        source ${{ github.action_path }}/gh-settings.nu
+        
+        # Check if configuration file exists
+        if not ($env.SETTINGS_FILE | path exists) {
+          print $"Configuration file not found: ($env.SETTINGS_FILE)"
+          print "Generating default configuration file..."
+          generate-default-settings $env.SETTINGS_FILE
+          print $"Default configuration created at ($env.SETTINGS_FILE)"
+          print "Please customize the configuration and run again."
+          exit 0
+        }
+        
+        # Load configuration
+        let config = (open $env.SETTINGS_FILE | from yaml)
+        print "Configuration loaded successfully"
+        
+        # Determine mode
+        if ($env.COMPARE_ONLY == "true") {
+          print "=== COMPARISON MODE ==="
+          compare-github-settings $owner $repo $config
+        } else if ($env.DRY_RUN == "true") {
+          print "=== DRY RUN MODE ==="
+          apply-github-settings $owner $repo $config true
+        } else {
+          print "=== APPLYING SETTINGS ==="
+          apply-github-settings $owner $repo $config false
+        }
+
+branding:
+  icon: "settings"
+  color: "blue"
