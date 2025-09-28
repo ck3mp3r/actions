@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Main module loader for nu-tools
 
 # Import all modules and re-export their functions
