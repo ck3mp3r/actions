@@ -86,7 +86,7 @@ def apply-repository-settings [
 
   if $dry_run {
     print $"Would update repository settings:"
-    print $settings
+    print ($settings | table -e)
     return
   }
 
@@ -125,7 +125,7 @@ def apply-branch-protection [
 
   if $dry_run {
     print $"Would update branch protection for ($branch):"
-    print $protection_settings
+    print ($protection_settings | table -e)
     return
   }
 
