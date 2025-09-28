@@ -83,6 +83,62 @@ jobs:
     gh-token: ${{ steps.app-token.outputs.token }}
 ```
 
+### Centralized Repository Management
+
+Manage multiple repositories from a central management repository:
+
+```yaml
+name: Manage Team Repository Settings
+on:
+  push:
+    branches: [main]
+    paths: ['configs/**/*.yaml']
+  schedule:
+    - cron: '0 6 * * 1'  # Weekly enforcement
+
+jobs:
+  manage-repositories:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - repository: "myorg/frontend-app"
+            config: "configs/frontend-app-config.yaml"
+          - repository: "myorg/backend-api" 
+            config: "configs/backend-api-config.yaml"
+          - repository: "myorg/infrastructure"
+            config: "configs/infrastructure-config.yaml"
+    
+    steps:
+      - uses: actions/checkout@v5
+      
+      - name: Generate GitHub App Token
+        id: app-token
+        uses: actions/create-github-app-token@v2.1.4
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-administration: write
+          repositories: ${{ matrix.repository }}
+      
+      - name: Apply Settings to ${{ matrix.repository }}
+        uses: ck3mp3r/actions/gh-settings@main
+        with:
+          repository: ${{ matrix.repository }}
+          settings-file: ${{ matrix.config }}
+          gh-token: ${{ steps.app-token.outputs.token }}
+```
+
+**Repository Structure Example:**
+```
+management-repo/
+├── .github/workflows/manage-repos.yaml
+└── configs/
+    ├── frontend-app-config.yaml
+    ├── backend-api-config.yaml
+    └── infrastructure-config.yaml
+```
+
 ## Configuration
 
 Create a `.github/repo-config.yaml` file in your repository:
@@ -135,6 +191,7 @@ branch_protection:
 
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
+| `repository` | Target repository in format 'owner/repo' | No | Current repository |
 | `settings-file` | Path to repository configuration file | No | `.github/repo-config.yaml` |
 | `gh-token` | GitHub token for API access | No | `${{ github.token }}` |
 | `dry-run` | Show what would be changed without applying | No | `false` |

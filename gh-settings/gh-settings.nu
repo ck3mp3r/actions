@@ -246,4 +246,3 @@ export def compare-github-settings [
     }
   }
 }
-

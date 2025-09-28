@@ -4,6 +4,10 @@ description: "Idempotently manage GitHub repository settings including branch pr
 author: "ck3mp3r"
 
 inputs:
+  repository:
+    description: "Target repository in format 'owner/repo' (defaults to current repository)"
+    required: false
+    default: ""
   settings-file:
     description: "Path to repository configuration file"
     required: false
@@ -39,45 +43,46 @@ runs:
       shell: nu {0}
       env:
         GH_TOKEN: ${{ inputs.gh-token }}
-        SETTINGS_FILE: ${{ inputs.settings-file }}
-        DRY_RUN: ${{ inputs.dry-run }}
-        COMPARE_ONLY: ${{ inputs.compare-only }}
-        GITHUB_REPOSITORY: ${{ github.repository }}
       run: |
         # GitHub Settings Management Script
-        
-        # Parse repository owner and name
-        let repo_parts = ($env.GITHUB_REPOSITORY | split row "/")
-        let owner = ($repo_parts | first)
-        let repo = ($repo_parts | last)
-        
-        print $"Managing repository configuration for ($owner)/($repo)"
-        print $"Configuration file: ($env.SETTINGS_FILE)"
-        print $"Dry run: ($env.DRY_RUN)"
-        print $"Compare only: ($env.COMPARE_ONLY)"
-        
+
         # Load the GitHub settings module
         source ${{ github.action_path }}/gh-settings.nu
-        
+
+        # Determine target repository (use input or current repo)
+        let target_repo = if ("${{ inputs.repository }}" | is-empty) { "${{ github.repository }}" } else { "${{ inputs.repository }}" }
+        let repo_parts = ($target_repo | split row "/")
+        let owner = ($repo_parts | first)
+        let repo = ($repo_parts | last)
+
+        let settings_file = "${{ inputs.settings-file }}"
+        let dry_run = ("${{ inputs.dry-run }}" == "true")
+        let compare_only = ("${{ inputs.compare-only }}" == "true")
+
+        print $"Managing repository configuration for ($owner)/($repo)"
+        print $"Configuration file: ($settings_file)"
+        print $"Dry run: ($dry_run)"
+        print $"Compare only: ($compare_only)"
+
         # Check if configuration file exists
-        if not ($env.SETTINGS_FILE | path exists) {
-          print $"Configuration file not found: ($env.SETTINGS_FILE)"
+        if not ($settings_file | path exists) {
+          print $"Configuration file not found: ($settings_file)"
           print "Generating default configuration file..."
-          generate-default-settings $env.SETTINGS_FILE
-          print $"Default configuration created at ($env.SETTINGS_FILE)"
+          generate-default-settings $settings_file
+          print $"Default configuration created at ($settings_file)"
           print "Please customize the configuration and run again."
           exit 0
         }
-        
+
         # Load configuration
-        let config = (open $env.SETTINGS_FILE | from yaml)
+        let config = (open $settings_file | from yaml)
         print "Configuration loaded successfully"
-        
+
         # Determine mode
-        if ($env.COMPARE_ONLY == "true") {
+        if $compare_only {
           print "=== COMPARISON MODE ==="
           compare-github-settings $owner $repo $config
-        } else if ($env.DRY_RUN == "true") {
+        } else if $dry_run {
           print "=== DRY RUN MODE ==="
           apply-github-settings $owner $repo $config true
         } else {
@@ -88,3 +93,4 @@ runs:
 branding:
   icon: "settings"
   color: "blue"
+
