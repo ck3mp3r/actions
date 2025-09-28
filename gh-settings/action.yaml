@@ -8,7 +8,7 @@ inputs:
     description: "Path to repository configuration file"
     required: false
     default: ".github/repo-config.yaml"
-  github-token:
+  gh-token:
     description: "GitHub token for API access"
     required: false
     default: ${{ github.token }}
@@ -38,7 +38,7 @@ runs:
     - name: Apply GitHub Settings
       shell: nu {0}
       env:
-        GITHUB_TOKEN: ${{ inputs.github-token }}
+        GH_TOKEN: ${{ inputs.gh-token }}
         SETTINGS_FILE: ${{ inputs.settings-file }}
         DRY_RUN: ${{ inputs.dry-run }}
         COMPARE_ONLY: ${{ inputs.compare-only }}

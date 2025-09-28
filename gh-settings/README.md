@@ -34,7 +34,7 @@ jobs:
       - name: Apply Repository Settings
         uses: ck3mp3r/actions/gh-settings@main
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          gh-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ### Advanced Usage with Custom Settings
@@ -44,7 +44,7 @@ jobs:
   uses: ck3mp3r/actions/gh-settings@main
   with:
     settings-file: '.github/custom-repo-config.yaml'
-    github-token: ${{ secrets.GITHUB_TOKEN }}
+    gh-token: ${{ secrets.GITHUB_TOKEN }}
     dry-run: 'false'
 ```
 
@@ -55,7 +55,7 @@ jobs:
   uses: ck3mp3r/actions/gh-settings@main
   with:
     compare-only: 'true'
-    github-token: ${{ secrets.GITHUB_TOKEN }}
+    gh-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ## Configuration
@@ -111,7 +111,7 @@ branch_protection:
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
 | `settings-file` | Path to repository configuration file | No | `.github/repo-config.yaml` |
-| `github-token` | GitHub token for API access | No | `${{ github.token }}` |
+| `gh-token` | GitHub token for API access | No | `${{ github.token }}` |
 | `dry-run` | Show what would be changed without applying | No | `false` |
 | `compare-only` | Only compare current vs desired settings | No | `false` |
 
