@@ -29,33 +29,58 @@ jobs:
   settings:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+      
+      - name: Generate GitHub App Token
+        id: app-token
+        uses: actions/create-github-app-token@v2.1.4.1.4
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-administration: write
+          permission-contents: read
       
       - name: Apply Repository Settings
         uses: ck3mp3r/actions/gh-settings@main
         with:
-          gh-token: ${{ secrets.GITHUB_TOKEN }}
+          gh-token: ${{ steps.app-token.outputs.token }}
 ```
 
 ### Advanced Usage with Custom Settings
 
 ```yaml
+- name: Generate GitHub App Token
+  id: app-token
+  uses: actions/create-github-app-token@v2.1.4
+  with:
+    app-id: ${{ vars.APP_ID }}
+    private-key: ${{ secrets.APP_PRIVATE_KEY }}
+    permission-administration: write
+
 - name: Apply Custom Settings
   uses: ck3mp3r/actions/gh-settings@main
   with:
     settings-file: '.github/custom-repo-config.yaml'
-    gh-token: ${{ secrets.GITHUB_TOKEN }}
+    gh-token: ${{ steps.app-token.outputs.token }}
     dry-run: 'false'
 ```
 
 ### Comparison Mode
 
 ```yaml
+- name: Generate GitHub App Token
+  id: app-token
+  uses: actions/create-github-app-token@v2.1.4
+  with:
+    app-id: ${{ vars.APP_ID }}
+    private-key: ${{ secrets.APP_PRIVATE_KEY }}
+    permission-administration: read
+
 - name: Check Settings Compliance
   uses: ck3mp3r/actions/gh-settings@main
   with:
     compare-only: 'true'
-    gh-token: ${{ secrets.GITHUB_TOKEN }}
+    gh-token: ${{ steps.app-token.outputs.token }}
 ```
 
 ## Configuration
@@ -136,7 +161,7 @@ jobs:
   compliance:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       
       - name: Check Compliance
         uses: ck3mp3r/actions/gh-settings@main
@@ -157,7 +182,7 @@ jobs:
   enforce:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       
       - name: Apply Settings
         uses: ck3mp3r/actions/gh-settings@main
@@ -175,7 +200,7 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       
       - name: Dry Run Settings
         uses: ck3mp3r/actions/gh-settings@main
@@ -185,10 +210,56 @@ jobs:
 
 ## Security
 
-- Requires `contents: read` and `administration: write` permissions
-- Uses repository's `GITHUB_TOKEN` by default
+- Requires `administration: write` permissions for repository and branch protection management
+- Uses repository's `GITHUB_TOKEN` by default (may have limited permissions)
 - All API calls use GitHub's official REST API via the GitHub CLI
 - No external dependencies beyond GitHub's infrastructure
+
+### Required Permissions
+
+The action requires **repository administration** permissions to manage:
+- Branch protection rules
+- Repository merge settings
+- Security and access policies
+
+### Token Requirements
+
+For full functionality, this action needs a token with `administration: write` permissions:
+
+#### Option 1: GitHub App Token (Recommended)
+GitHub Apps provide better security and fine-grained permissions:
+
+```yaml
+- name: Generate GitHub App Token
+  id: app-token
+  uses: actions/create-github-app-token@v2.1.4
+  with:
+    app-id: ${{ vars.APP_ID }}
+    private-key: ${{ secrets.APP_PRIVATE_KEY }}
+    permission-administration: write
+    permission-contents: read
+
+- name: Apply Repository Settings
+  uses: ck3mp3r/actions/gh-settings@main
+  with:
+    gh-token: ${{ steps.app-token.outputs.token }}
+```
+
+#### Option 2: Fine-grained Personal Access Token
+If using a PAT, ensure it has the **Administration** repository permission:
+- Scope: Repository access (specific repositories)
+- Permissions: Administration (write)
+
+#### Option 3: Workflow Permissions (Limited)
+For basic repository settings (not branch protection), you may use `GITHUB_TOKEN` with enhanced permissions:
+
+```yaml
+permissions:
+  contents: read
+  administration: write  # Required for repository settings
+```
+
+**Note**: The default `GITHUB_TOKEN` typically lacks administration permissions for security reasons.
 
 ## Requirements
 
@@ -200,7 +271,7 @@ jobs:
 ## Troubleshooting
 
 ### Permission Errors
-Ensure your token has `administration: write` permissions for the repository.
+Ensure your token has `administration: write` permissions for the repository. The default `GITHUB_TOKEN` does not have administration permissions. Use a GitHub App token or fine-grained PAT with administration permissions.
 
 ### Settings Not Applied
 Check the action logs for specific error messages. Common issues:
@@ -210,6 +281,28 @@ Check the action logs for specific error messages. Common issues:
 
 ### No Settings File
 The action will generate a default settings file on first run. Customize it for your needs and commit the changes.
+
+## GitHub App Setup
+
+For the best security and functionality, set up a GitHub App:
+
+1. **Create GitHub App**:
+   - Go to your organization/user settings → Developer settings → GitHub Apps
+   - Create a new GitHub App with these repository permissions:
+     - Administration: Write (required for branch protection)
+     - Contents: Read (optional, for reading configuration files)
+
+2. **Install the App**:
+   - Install the app on repositories where you want to manage settings
+   - Note the App ID and generate a private key
+
+3. **Configure Secrets**:
+   - Add `APP_ID` as a repository/organization variable
+   - Add `APP_PRIVATE_KEY` as a repository/organization secret (the full PEM content)
+
+4. **Use in Workflows**:
+   - Use `actions/create-github-app-token@v2.1.4` to generate tokens
+   - Pass the token to the `gh-token` input
 
 ## Contributing
 
