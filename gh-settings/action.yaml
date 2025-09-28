@@ -74,8 +74,8 @@ runs:
           exit 0
         }
 
-        # Load configuration
-        let config = (open $settings_file | from yaml)
+        # Load configuration (open automatically handles YAML parsing)
+        let config = (open $settings_file)
         print "Configuration loaded successfully"
 
         # Determine mode
