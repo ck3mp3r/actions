@@ -38,7 +38,12 @@ A GitHub Action that provides modular Nushell tools for release workflows and CI
 - `generate-platform-data`: Generate per-architecture data files
 - `generate-platform-data-for`: Generate platform data for specific version
 
-## Example Workflow
+### homebrew.nu
+- `update-homebrew-formula`: Update Homebrew formula with new version and architecture-specific hashes (accepts piped input)
+
+## Example Workflows
+
+### Release Workflow
 
 ```yaml
 name: Release
@@ -69,6 +74,28 @@ jobs:
             | commit-files $"Release ($new_version)"
             
           create-github-release $new_version
+```
+
+### Homebrew Formula Update
+
+```yaml
+- name: Update Homebrew Formula
+  shell: nu {0}
+  run: |
+    use nu-tools *
+    
+    # Define architecture-specific hashes
+    let architectures = [
+      {name: "aarch64-apple-darwin", hash: "abc123..."},
+      {name: "x86_64-apple-darwin", hash: "def456..."},
+      {name: "aarch64-unknown-linux-gnu", hash: "ghi789..."},
+      {name: "x86_64-unknown-linux-gnu", hash: "jkl012..."}
+    ]
+    
+    # Update formula with piped input
+    open formula.rb 
+      | update-homebrew-formula "1.2.3" "my-binary" $architectures
+      | save formula.rb
 ```
 
 ## Requirements
