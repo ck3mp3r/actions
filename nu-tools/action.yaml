@@ -30,6 +30,12 @@ runs:
         # Copy all module files into the scripts directory
         cp ${{ github.action_path }}/modules/*.nu ~/.config/nushell/scripts/nu-tools/
 
+    - name: Set Nu Tools Module Path
+      shell: bash
+      run: |
+        # Add the scripts directory to NU_LIB_DIRS for module discovery
+        echo "NU_LIB_DIRS=$HOME/.config/nushell/scripts" >> $GITHUB_ENV
+
     - name: Verify Installation
       shell: nu {0}
       run: |
