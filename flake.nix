@@ -8,6 +8,7 @@
       url = "github:cachix/devenv";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
     topiary-nu = {
       url = "github:ck3mp3r/flakes?dir=topiary-nu";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -22,38 +23,38 @@
 
       systems = ["x86_64-linux" "aarch64-linux" "aarch64-darwin" "x86_64-darwin"];
 
-      perSystem = {
-        config,
-        system,
-        ...
-      }: let
-        pkgs = inputs.base-nixpkgs.legacyPackages.${system};
-        overlays = [inputs.topiary-nu.overlays.default];
-        pkgsWithOverlays = import inputs.nixpkgs {inherit system overlays;};
+      perSystem = {system, ...}: let
+        pkgs = import inputs.nixpkgs {
+          inherit system;
+          overlays = [
+            inputs.topiary-nu.overlays.default
+          ];
+        };
       in {
         _module.args.pkgs = pkgs;
 
         devenv.shells.default = {
           packages = with pkgs; [
             act
-            pkgsWithOverlays.topiary
-            pkgsWithOverlays.topiary-nu
+            topiary
+            topiary-nu
           ];
 
           env = {
-            TOPIARY_CONFIG_FILE = "${pkgsWithOverlays.topiary-nu}/languages.ncl";
-            TOPIARY_LANGUAGE_DIR = "${pkgsWithOverlays.topiary-nu}/languages";
+            TOPIARY_CONFIG_FILE = "${pkgs.topiary-nu}/languages.ncl";
+            TOPIARY_LANGUAGE_DIR = "${pkgs.topiary-nu}/languages";
           };
 
           scripts.format.exec = "nix fmt .";
           scripts.checks.exec = "nix flake check --impure";
 
           git-hooks.hooks = {
-            # Format Nushell files with topiary
+            alejandra.enable = true;
+            statix.enable = true;
             topiary = {
               enable = true;
               name = "topiary";
-              entry = "${pkgsWithOverlays.topiary}/bin/topiary format";
+              entry = "${pkgs.topiary}/bin/topiary format";
               files = "\\.nu$";
               language = "system";
               pass_filenames = true;

@@ -10,5 +10,5 @@ windows:
 
   - name: misc
     panes:
-      - flex: 2
+      - flex: 1
       - flex: 1

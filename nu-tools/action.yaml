@@ -17,18 +17,40 @@ runs:
         echo "Installing Nushell via nix..."
         # Always install latest from nixpkgs since version pinning in nix is more complex
         # and would require specific nixpkgs revisions
-        nix profile install nixpkgs#nushell
+        nix profile install nixpkgs#nushell nixpkgs#cachix
 
         # Verify installation
         nu --version
 
     - name: Install Nu Tools Modules
-      shell: bash
+      shell: nu {0}
       run: |
-        # Create nushell config and scripts directories
-        mkdir -p ~/.config/nushell/scripts/nu-tools
-        # Copy all module files into the scripts directory
-        cp ${{ github.action_path }}/modules/*.nu ~/.config/nushell/scripts/nu-tools/
+        let nu_tools_dir = [$nu.default-config-dir scripts nu-tools] | path join
+        let modules_source = ["${{ github.action_path }}" modules] | path join
+
+        print $"Installing Nu Tools modules to ($nu_tools_dir)..."
+
+        mkdir $nu_tools_dir
+
+        ls $modules_source
+          | where name ends-with .nu
+          | each {|file|
+              let dest = [$nu_tools_dir ($file.name | path basename)] | path join
+              print $"  Copying ($file.name | path basename)..."
+              cp $file.name $dest
+            }
+
+        print "✓ Nu Tools modules installed successfully"
+
+    - name: Setup Environment
+      shell: nu {0}
+      run: |
+        let config_file = [$nu.default-config-dir config.nu] | path join
+        let scripts_dir = [$nu.default-config-dir scripts] | path join
+
+        $'$env.NU_LIB_DIRS = ($env.NU_LIB_DIRS? | default [] | append "($scripts_dir)" | uniq)' | save -a $config_file
+
+        print $"✓ Added ($scripts_dir) to NU_LIB_DIRS in ($config_file)"
 
     - name: Verify Installation
       shell: nu {0}

@@ -29,16 +29,20 @@
         "unstable": "unstable_2"
       },
       "locked": {
-        "path": "../base-nixpkgs",
-        "type": "path"
+        "dir": "base-nixpkgs",
+        "lastModified": 1763822234,
+        "narHash": "sha256-zNxCwQtdiP/Ra/DWG/PnR/55inOdrLij4tGzfzMX8U0=",
+        "owner": "ck3mp3r",
+        "repo": "flakes",
+        "rev": "f037cd474da756dcacddf2e598da650542a89e60",
+        "type": "github"
       },
       "original": {
-        "path": "../base-nixpkgs",
-        "type": "path"
-      },
-      "parent": [
-        "topiary-nu"
-      ]
+        "dir": "base-nixpkgs",
+        "owner": "ck3mp3r",
+        "repo": "flakes",
+        "type": "github"
+      }
     },
     "cachix": {
       "inputs": {
@@ -377,11 +381,11 @@
       },
       "locked": {
         "dir": "topiary-nu",
-        "lastModified": 1763813574,
-        "narHash": "sha256-+4NwDPOSiBaA8ILqps+EJ8N1RjGQif+UG24Oz4eEw8Q=",
+        "lastModified": 1763834837,
+        "narHash": "sha256-B73/vWDWIkeAxUm5fy5T3kl5uKrTlMCuWy8Mc8ZiNnY=",
         "owner": "ck3mp3r",
         "repo": "flakes",
-        "rev": "99a6f791dd17fa15f5fc84b6104098a9ec720ae6",
+        "rev": "403de016d1c3bde256759d8bfb42a0d6acf762c2",
         "type": "github"
       },
       "original": {
