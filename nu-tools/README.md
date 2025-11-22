@@ -41,6 +41,13 @@ A GitHub Action that provides modular Nushell tools for release workflows and CI
 ### homebrew.nu
 - `update-homebrew-formula`: Update Homebrew formula with new version and architecture-specific hashes (accepts piped input)
 
+### cachix.nu
+- `publish-to-cachix`: Build flake and push missing store paths to Cachix cache
+- `get-flake-dependencies`: Get all recursive dependencies for a flake output
+- `check-cache-status`: Check cache status for store paths (accepts piped input)
+- `get-missing-paths`: Get paths missing from both upstream and cachix caches (accepts piped input)
+- `push-paths`: Push store paths to Cachix cache (accepts piped input)
+
 ## Example Workflows
 
 ### Release Workflow
@@ -96,6 +103,26 @@ jobs:
     open formula.rb 
       | update-homebrew-formula "1.2.3" "my-binary" $architectures
       | save formula.rb
+```
+
+### Cachix Publishing
+
+```yaml
+- name: Publish to Cachix
+  shell: nu {0}
+  env:
+    CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+  run: |
+    use nu-tools *
+    
+    # Simple: Build and push missing paths to cachix
+    publish-to-cachix "ck3mp3r" --flake ".#mypackage"
+    
+    # Advanced: Custom pipeline with explicit steps
+    get-flake-dependencies ".#myapp"
+      | check-cache-status "ck3mp3r" --upstream "https://cache.nixos.org"
+      | get-missing-paths "ck3mp3r"
+      | push-paths "ck3mp3r"
 ```
 
 ## Requirements
