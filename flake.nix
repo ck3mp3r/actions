@@ -1,30 +1,42 @@
 {
-  description = "virtual environments";
+  description = "Reusable Github Actions";
 
-  inputs.nixpkgs.url = "github:NixOs/nixpkgs/release-25.05";
-  inputs.devshell.url = "github:numtide/devshell";
-  inputs.flake-utils.url = "github:numtide/flake-utils";
+  inputs = {
+    base-nixpkgs.url = "github:ck3mp3r/flakes?dir=base-nixpkgs";
+    nixpkgs.follows = "base-nixpkgs/unstable";
+    devenv.url = "github:cachix/devenv";
+  };
 
-  outputs = {
-    flake-utils,
-    devshell,
-    nixpkgs,
-    ...
-  }:
-    flake-utils.lib.eachDefaultSystem (system: let
-      pkgs = import nixpkgs {
-        inherit system;
-        config.allowUnfree = true;
-        config.allowBroken = true;
-        overlays = [devshell.overlays.default];
+  outputs = inputs @ {base-nixpkgs, ...}:
+    base-nixpkgs.inputs.flake-parts.lib.mkFlake {inherit inputs;} {
+      imports = [
+        inputs.devenv.flakeModule
+      ];
+
+      systems = ["x86_64-linux" "aarch64-linux" "aarch64-darwin" "x86_64-darwin"];
+
+      perSystem = {
+        config,
+        system,
+        ...
+      }: let
+        pkgs = inputs.base-nixpkgs.legacyPackages.${system};
+      in {
+        _module.args.pkgs = pkgs;
+
+        devenv.shells.default = {
+          packages = with pkgs; [
+            act
+          ];
+
+          scripts.format.exec = "nix fmt .";
+          scripts.checks.exec = "nix flake check --impure";
+
+          # Disable features we don't need
+          containers = pkgs.lib.mkForce {};
+        };
+
+        formatter = pkgs.alejandra;
       };
-    in {
-      devShells.default = pkgs.devshell.mkShell {
-        imports = [
-          (pkgs.devshell.importTOML ./devshell.toml)
-        ];
-      };
-
-      formatter = pkgs.alejandra;
-    });
+    };
 }
