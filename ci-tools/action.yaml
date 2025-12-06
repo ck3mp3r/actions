@@ -19,12 +19,12 @@ runs:
       shell: bash
       run: |
         echo "Installing Nushell and CI module via nix..."
-        
+
         # Install Nushell from nixpkgs
-        nix profile install nixpkgs#nushell
-        
+        nix profile add nixpkgs#nushell
+
         # Install CI module from nu-mods repository
-        nix profile install github:ck3mp3r/nu-mods/${{ inputs.nu-mods-ref }}#ci
+        nix profile add github:ck3mp3r/nu-mods/${{ inputs.nu-mods-ref }}#ci
 
         # Verify installation
         nu --version
@@ -37,7 +37,7 @@ runs:
 
         # Symlink scripts to nix profile modules
         ln -s ($env.HOME | path join '.nix-profile' 'share' 'nushell' 'modules') $scripts_dir
-        
+
         print $"✓ Created symlink from ($scripts_dir) to nix profile modules"
 
     - name: Verify Installation
