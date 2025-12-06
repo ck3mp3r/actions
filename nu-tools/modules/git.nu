@@ -2,7 +2,7 @@
 
 # Get latest git tag version (without 'v' prefix)
 export def get-latest-tag [] {
-  let result = (^git tag --sort=-version:refname | complete)
+  let result = (^git tag "--sort=-version:refname" | complete)
   if $result.exit_code == 0 {
     $result.stdout | lines | first | str replace --regex "^v" ""
   } else {
