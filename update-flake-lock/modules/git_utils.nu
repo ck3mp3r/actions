@@ -31,7 +31,7 @@ export def 'branch rebase' [] {
   }
 }
 
-export def 'branch push' [ --force (-f)] {
+export def 'branch push' [--force (-f)] {
   let branch = $in
   $env.GIT_TERMINAL_PROMPT = 0
 
@@ -49,7 +49,7 @@ export def 'branch delete' [] {
   $branch
 }
 
-export def 'branch merge' [ --into (-i): string = "main" --squash (-s)] {
+export def 'branch merge' [--into (-i): string = "main" --squash (-s)] {
   let head_branch = $in
 
   git switch $into --
@@ -62,11 +62,11 @@ export def 'branch merge' [ --into (-i): string = "main" --squash (-s)] {
   }
 }
 
-export def 'branch commit-all' [ --message (-m): string] {
+export def 'branch commit-all' [--message (-m): string] {
   git commit -am $"($message)"
 }
 
-export def 'commit checks' [ --status: string = "success" --checks-required: list = []] {
+export def 'commit checks' [--status: string = "success" --checks-required: list = []] {
   let commit = $in
 
   let checks = if ($checks_required | is-not-empty) {

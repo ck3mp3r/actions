@@ -3,7 +3,7 @@
 # Create GitHub release with changelog
 export def create-github-release [version: string] {
   print $"Creating GitHub release v($version)"
-  
+
   # Get the previous tag for changelog generation  
   let all_tags = (^git tag --sort "-version:refname" | lines)
   let previous_tag = ($all_tags | where not ($it == $"v($version)") | first | default "")

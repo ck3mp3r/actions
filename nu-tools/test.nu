@@ -7,7 +7,7 @@ print "Testing Nu Tools modules..."
 # Test each module file for syntax errors
 print "\n🧪 Testing module syntax..."
 
-let modules = ["semver.nu", "git.nu", "cargo.nu", "github.nu", "artifacts.nu", "mod.nu"]
+let modules = ["semver.nu" "git.nu" "cargo.nu" "github.nu" "artifacts.nu" "mod.nu"]
 
 for module in $modules {
   try {
