@@ -76,6 +76,4 @@ export def merge-and-cleanup [version: string] {
 
   print "Cleaning up release branch"
   ^git push origin --delete $branch_name
-
-  print $"Release ($version) completed successfully!"
 }
