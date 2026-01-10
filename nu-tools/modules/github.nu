@@ -18,7 +18,7 @@ export def create-github-release [version: string] {
   }
 
   # Create release with changelog as body
-  ^gh release create $"v($version)" --title $"Release v($version)" --target $"release/($version)" --notes $changelog
+  ^gh release create $"v($version)" --title $"Release v($version)" --notes $changelog
   print $"Created GitHub release v($version) with changelog"
 }
 
