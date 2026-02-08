@@ -20,8 +20,8 @@ runs:
       run: |
         echo "Installing Nushell and CI module via nix..."
 
-        # Install Nushell from nixpkgs
-        nix profile add nixpkgs#nushell
+        # Install Nushell from nu-mods repository
+        nix profile add github:ck3mp3r/nu-mods/${{ inputs.nu-mods-ref }}#nushell
 
         # Install CI module from nu-mods repository
         nix profile add github:ck3mp3r/nu-mods/${{ inputs.nu-mods-ref }}#ci
