@@ -1,0 +1,45 @@
+# prek configuration — git hook manager (pre-commit compatible)
+# Docs: https://prek.j178.dev/
+#
+# Install git shims (run once per clone):
+#   prek install
+#
+# Run manually:
+#   prek run --stage pre-commit
+#   prek run --all-files
+#
+# The default_install_hook_types below makes `prek install` (without -t)
+# install the pre-commit shim.
+
+default_install_hook_types = ["pre-commit"]
+
+# Format Nix files with alejandra and check for Nix lint issues with statix.
+[[repos]]
+repo = "local"
+
+  [[repos.hooks]]
+  id = "alejandra"
+  name = "alejandra"
+  language = "system"
+  entry = "alejandra"
+  pass_filenames = true
+  files = "\\.nix$"
+  stages = ["pre-commit"]
+
+  [[repos.hooks]]
+  id = "statix"
+  name = "statix check"
+  language = "system"
+  entry = "statix check --format errfmt"
+  pass_filenames = false
+  files = "\\.nix$"
+  stages = ["pre-commit"]
+
+  [[repos.hooks]]
+  id = "topiary"
+  name = "topiary"
+  language = "system"
+  entry = "topiary format"
+  pass_filenames = true
+  files = "\\.nu$"
+  stages = ["pre-commit"]
